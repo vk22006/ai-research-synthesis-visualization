@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
 transformers
 torch
@@ -7,3 +7,6 @@ sentence-transformers
 networkx
 pyvis
 streamlit
+scikit-learn
+scipy
+numpy
