@@ -1,11 +1,11 @@
 """
-app.py – FastAPI backend for the AI Research Synthesis & Knowledge Graph Builder.
+app.py - FastAPI backend for the AI Research Synthesis & Knowledge Graph Builder.
 
 Endpoints
 ---------
 GET /search?topic=<str>&max_results=<int>&similarity_threshold=<float>
-GET /graph    – Returns the latest generated graph HTML.
-GET /health   – Simple health-check.
+GET /graph    - Returns the latest generated graph HTML.
+GET /health   - Simple health-check.
 """
 from __future__ import annotations
 
