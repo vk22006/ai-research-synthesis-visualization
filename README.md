@@ -85,6 +85,6 @@ The frontend dashboard will automatically open in your default browser at `http:
 4. Click **Run Analysis**. 
 5. The system will process the papers and display the Extracted Papers, their Summaries, extracted Claims, and an Interactive Knowledge Graph visualization.
 
-## License
+<!-- ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. -->
