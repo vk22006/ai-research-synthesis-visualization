@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+requests
+transformers
+torch
+sentence-transformers
+networkx
+pyvis
+streamlit
