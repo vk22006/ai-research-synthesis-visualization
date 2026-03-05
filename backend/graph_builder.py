@@ -38,6 +38,7 @@ def build_graph(
     sim_matrix: np.ndarray,
     topic: str,
     similarity_threshold: float = SIMILARITY_THRESHOLD,
+    relationships: list[dict] = None
 ) -> nx.Graph:
     """
     Build and return a NetworkX graph from enriched paper data.
@@ -96,22 +97,52 @@ def build_graph(
         # Edge: paper → topic hub
         G.add_edge(pid, topic, relation="related_to", width=1, color="#aaaaaa")
 
-    # ── Similarity edges (paper ↔ paper) ──────────────────────────────────────
-    n = len(papers)
-    for i in range(n):
-        for j in range(i + 1, n):
-            score = float(sim_matrix[i][j]) if sim_matrix.size else 0.0
-            if score >= similarity_threshold:
-                G.add_edge(
-                    papers[i]["id"],
-                    papers[j]["id"],
-                    relation="similar_to",
-                    weight=round(score, 3),
-                    label=f"{score:.2f}",
-                    title=f"Similarity: {score:.2f}",
-                    width=max(1, int(score * 5)),
-                    color="#E07B54",   # warm orange
-                )
+    # ── Similarity / Contradiction edges (paper ↔ paper) ──────────────────────
+    if relationships is not None:
+        for rel in relationships:
+            rel_type = rel.get("relation", "similar_to")
+            sim_score = rel.get("score") or rel.get("sim_score", 0.0)
+            nli_score = rel.get("nli_score", 0.0)
+            
+            # Map relation to UI colors
+            if rel_type == "supports":
+                color = "#5CB85C"  # green
+                width = 3
+                title = f"Supports (Score: {nli_score:.2f})"
+            elif rel_type == "contradicts":
+                color = "#D9534F"  # red
+                width = 3
+                title = f"Contradicts (Score: {nli_score:.2f})"
+            else: # similar_to or related_to
+                color = "#888888"  # gray
+                width = max(1, int(sim_score * 5))
+                title = f"Related (Sim: {sim_score:.2f})"
+
+            G.add_edge(
+                rel["source"],
+                rel["target"],
+                relation=rel_type,
+                label=rel_type.replace("_", " ").title(),
+                title=title,
+                width=width,
+                color=color,
+            )
+    else:
+        # Fallback to similarity matrix
+        n = len(papers)
+        for i in range(n):
+            for j in range(i + 1, n):
+                score = float(sim_matrix[i][j]) if sim_matrix.size else 0.0
+                if score >= similarity_threshold:
+                    G.add_edge(
+                        papers[i]["id"],
+                        papers[j]["id"],
+                        relation="similar_to",
+                        label=f"{score:.2f}",
+                        title=f"Similarity: {score:.2f}",
+                        width=max(1, int(score * 5)),
+                        color="#E07B54",   # warm orange
+                    )
 
     # ── Concept nodes (shared keywords from titles) ───────────────────────────
     keyword_map: dict[str, list[str]] = {}  # keyword → [paper_ids]
