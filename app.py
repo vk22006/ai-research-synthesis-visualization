@@ -139,10 +139,19 @@ def search(
         n = len(papers)
         sim_matrix = np.zeros((n, n))
 
+    # ── 3.5. Contradiction Detection ──────────────────────────────────────────
+    logger.info("Running contradiction detection (%d papers)…", len(papers))
+    try:
+        from backend.contradiction_detector import detect_contradictions
+        relationships = detect_contradictions(papers, sim_matrix, similarity_threshold)
+    except Exception as exc:
+        logger.warning("Contradiction detection failed: %s", exc)
+        relationships = []
+
     # ── 4. Build knowledge graph ──────────────────────────────────────────────
     logger.info("Building knowledge graph…")
     try:
-        G = build_graph(papers, sim_matrix, topic, similarity_threshold)
+        G = build_graph(papers, sim_matrix, topic, similarity_threshold, relationships)
     except Exception as exc:
         logger.error("build_graph failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Graph build failed: {exc}")
@@ -156,11 +165,23 @@ def search(
         logger.error("visualize_graph failed: %s", exc)
         graph_path = ""
 
-    # ── 6. Return ─────────────────────────────────────────────────────────────
+    # ── 6. Build Timeline Graph ───────────────────────────────────────────────
+    logger.info("Building timeline graph…")
+    TIMELINE_OUTPUT_PATH = "data/timeline.html"
+    try:
+        from backend.timeline_builder import build_timeline_graph, visualize_timeline
+        T = build_timeline_graph(papers)
+        timeline_path = visualize_timeline(T, TIMELINE_OUTPUT_PATH)
+    except Exception as exc:
+        logger.error("timeline build failed: %s", exc)
+        timeline_path = ""
+
+    # ── 7. Return ─────────────────────────────────────────────────────────────
     return JSONResponse(content={
         "topic": topic,
         "paper_count": len(papers),
         "graph_path": graph_path,
+        "timeline_path": timeline_path,
         "graph_stats": {
             "nodes": G.number_of_nodes(),
             "edges": G.number_of_edges(),
@@ -188,5 +209,16 @@ def get_graph():
     if not os.path.exists(abs_path):
         raise HTTPException(status_code=404,
                             detail="Graph not found. Call /search first.")
+    with open(abs_path, "r", encoding="utf-8") as fh:
+        return HTMLResponse(content=fh.read())
+
+
+@app.get("/timeline", response_class=HTMLResponse)
+def get_timeline():
+    """Return the latest generated timeline graph as HTML."""
+    abs_path = os.path.abspath("data/timeline.html")
+    if not os.path.exists(abs_path):
+        raise HTTPException(status_code=404,
+                            detail="Timeline not found. Call /search first.")
     with open(abs_path, "r", encoding="utf-8") as fh:
         return HTMLResponse(content=fh.read())
