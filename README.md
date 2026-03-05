@@ -1,5 +1,7 @@
 # AI Research Synthesis & Knowledge Graph Builder
 
+![Main visualizations of the application](assets/app_visualization.gif)
+
 An end-to-end tool to accelerate AI research by automatically fetching papers, synthesizing their contents, and organizing them into interactive knowledge graphs. 
 
 This application uses Natural Language Processing (NLP) models to extract summaries and core claims from arXiv papers and visualizes the connections between research papers based on semantic similarity.
