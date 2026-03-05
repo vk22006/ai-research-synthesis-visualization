@@ -38,7 +38,7 @@ desktop.ini
 
 # Data / Generated outputs
 data/papers.json
-data/graph.html
+data/*.html
 
 # Logs
 *.log
