@@ -35,29 +35,18 @@ def visualize_graph(G: nx.Graph, output_path: str = "data/graph.html") -> str:
         directed=False,
     )
 
-    # Physics for a nice organic layout
+    # Layout calculated in Python so the graph is completely static in the browser
     net.set_options("""
     {
       "physics": {
-        "enabled": true,
-        "barnesHut": {
-          "gravitationalConstant": -8000,
-          "centralGravity": 0.3,
-          "springLength": 150,
-          "springConstant": 0.04,
-          "damping": 0.09,
-          "avoidOverlap": 0.5
-        },
-        "stabilization": {
-          "enabled": true,
-          "iterations": 200
-        }
+        "enabled": false
       },
       "interaction": {
         "hover": true,
         "tooltipDelay": 100,
         "navigationButtons": true,
-        "keyboard": true
+        "keyboard": true,
+        "dragNodes": true
       },
       "edges": {
         "smooth": {
@@ -73,8 +62,13 @@ def visualize_graph(G: nx.Graph, output_path: str = "data/graph.html") -> str:
     }
     """)
 
+    # Compute static layout in Python
+    # k regulates the distance between nodes (higher = more spread out)
+    pos = nx.spring_layout(G, k=0.8, iterations=100, scale=800)
+
     # ── Add nodes from NetworkX ───────────────────────────────────────────────
     for node, attrs in G.nodes(data=True):
+        x, y = pos[node]
         net.add_node(
             str(node),
             label=attrs.get("label", str(node)),
@@ -82,6 +76,8 @@ def visualize_graph(G: nx.Graph, output_path: str = "data/graph.html") -> str:
             color=attrs.get("color", "#888888"),
             size=attrs.get("size", 15),
             shape=attrs.get("shape", "dot"),
+            x=int(x),
+            y=int(y)
         )
 
     # ── Add edges from NetworkX ───────────────────────────────────────────────
