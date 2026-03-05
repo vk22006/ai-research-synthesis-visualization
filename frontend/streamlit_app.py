@@ -197,17 +197,15 @@ with st.sidebar:
     st.divider()
     st.markdown(
         """
-        **Node Legend**
+        **Graph Legend**
         
-        🔶 **Gold star** – Topic hub  
-        🔵 **Blue circle** – Research paper  
-        🟢 **Green diamond** – Shared concept
+        🔶 **Topic** | 🔵 **Paper** | 🟢 **Concept**
+        🟩 *supports* | 🟥 *contradicts* | ⬜ *related*
         
-        **Edge Legend**
+        **Timeline Legend**
         
-        ⬜ Gray – *related_to* topic  
-        🟠 Orange – *similar_to* peer  
-        ⬜ Light – *mentions* concept  
+        🔵 **Paper** | 🔶 **Concept** | ⬜ **Year**
+        *introduces*, *mentions*, *extends*  
         """
     )
     st.divider()
@@ -282,22 +280,42 @@ if search_clicked and topic.strip():
             unsafe_allow_html=True,
         )
 
-    # ── Knowledge Graph ────────────────────────────────────────────────────────
-    st.markdown('<div class="section-heading">Interactive Knowledge Graph</div>', unsafe_allow_html=True)
-    graph_html_path = data.get("graph_path", "")
-    if graph_html_path and os.path.exists(graph_html_path):
-        with open(graph_html_path, "r", encoding="utf-8") as f:
-            graph_html = f.read()
-        components.html(graph_html, height=720, scrolling=False)
-    else:
-        try:
-            gr = requests.get(f"{BACKEND_URL}/graph", timeout=10)
-            if gr.status_code == 200:
-                components.html(gr.text, height=720, scrolling=False)
-            else:
-                st.warning("Graph file not found.")
-        except Exception:
-            st.warning("Could not load the graph visualisation.")
+    # ── Tabs for Visualizations ────────────────────────────────────────────────
+    st.markdown('<div class="section-heading">Visualizations</div>', unsafe_allow_html=True)
+    
+    tab_graph, tab_timeline = st.tabs(["🕸️ Semantic Knowledge Graph", "⏳ Evolution Timeline"])
+    
+    with tab_graph:
+        graph_html_path = data.get("graph_path", "")
+        if graph_html_path and os.path.exists(graph_html_path):
+            with open(graph_html_path, "r", encoding="utf-8") as f:
+                graph_html = f.read()
+            components.html(graph_html, height=720, scrolling=False)
+        else:
+            try:
+                gr = requests.get(f"{BACKEND_URL}/graph", timeout=10)
+                if gr.status_code == 200:
+                    components.html(gr.text, height=720, scrolling=False)
+                else:
+                    st.warning("Graph file not found.")
+            except Exception:
+                st.warning("Could not load the graph visualisation.")
+                
+    with tab_timeline:
+        timeline_html_path = data.get("timeline_path", "")
+        if timeline_html_path and os.path.exists(timeline_html_path):
+            with open(timeline_html_path, "r", encoding="utf-8") as f:
+                timeline_html = f.read()
+            components.html(timeline_html, height=720, scrolling=False)
+        else:
+            try:
+                gr = requests.get(f"{BACKEND_URL}/timeline", timeout=10)
+                if gr.status_code == 200:
+                    components.html(gr.text, height=720, scrolling=False)
+                else:
+                    st.warning("Timeline file not found. Ensure the server successfully generated it.")
+            except Exception:
+                st.warning("Could not load the timeline visualisation.")
 
     # ── Paper cards ───────────────────────────────────────────────────────────
     st.markdown('<div class="section-heading">Paper Summaries & Key Claims</div>', unsafe_allow_html=True)
