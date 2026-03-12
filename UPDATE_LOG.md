@@ -1,6 +1,6 @@
-# Update Log - 2026-03-12
+# Update Log (Post-Hackathon)
 
-## Optimizations applied to `app.py`
+## 12-03-2026 : Optimizations applied to `app.py`
 To significantly improve the overall latency of the paper synthesis pipeline, the following performance optimizations were made in `app.py` today:
 
 1. **Model Warm-up on Startup:**
