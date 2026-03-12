@@ -15,7 +15,7 @@ This application uses Natural Language Processing (NLP) models to extract summar
 - **Modern Dashboard**: An intuitive Streamlit frontend enabling seamless interaction, search configuration, and visualization exploration.
 - **Robust API Backend**: A FastAPI-based backend architecture handling the pipeline from data retrieval to graph generation.
 
-For recent updates, refer [UPDATE_LOG.md](UPDATE_LOG).
+For recent updates, refer [UPDATE_LOG](UPDATE_LOG.md).
 
 ## Project Structure
 
