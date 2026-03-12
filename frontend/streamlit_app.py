@@ -257,6 +257,7 @@ if search_clicked and topic.strip():
 
     papers = data.get("papers", [])
     graph_stats = data.get("graph_stats", {})
+    lit_review = data.get("literature_review", {})
 
     # ── Stats row ─────────────────────────────────────────────────────────────
     st.markdown(f'<div class="section-heading">Results for: {topic}</div>', unsafe_allow_html=True)
@@ -316,6 +317,26 @@ if search_clicked and topic.strip():
                     st.warning("Timeline file not found. Ensure the server successfully generated it.")
             except Exception:
                 st.warning("Could not load the timeline visualisation.")
+
+    # ── AI Generated Literature Review ─────────────────────────────────────────
+    if lit_review:
+        st.markdown('<div class="section-heading">AI Generated Literature Review</div>', unsafe_allow_html=True)
+        
+        st.markdown(f"**Overview:**\n{lit_review.get('overview', '')}")
+        
+        st.markdown("**Key Findings:**")
+        for finding in lit_review.get('key_findings', []):
+            st.markdown(f"- {finding}")
+            
+        st.markdown("**Consensus:**")
+        for consensus in lit_review.get('consensus', []):
+            st.markdown(f"- {consensus}")
+            
+        st.markdown("**Conflicts:**")
+        for conflict in lit_review.get('conflicts', []):
+            st.markdown(f"- {conflict}")
+            
+        st.markdown(f"**Emerging Trends:**\n{lit_review.get('emerging_trends', '')}")
 
     # ── Paper cards ───────────────────────────────────────────────────────────
     st.markdown('<div class="section-heading">Paper Summaries & Key Claims</div>', unsafe_allow_html=True)
