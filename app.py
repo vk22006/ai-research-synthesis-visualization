@@ -24,6 +24,7 @@ from fastapi.exception_handlers import http_exception_handler
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 from starlette.responses import JSONResponse as StarletteJSONResponse
+from concurrent.futures import ThreadPoolExecutor
 
 from backend.fetch_papers import fetch_arxiv
 from backend.summarize import summarize_text
@@ -53,6 +54,17 @@ app.add_middleware(
 )
 
 GRAPH_OUTPUT_PATH = "data/graph.html"
+SEARCH_CACHE = {}
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Warming up SentenceTransformer model...")
+    try:
+        from backend.embeddings import _get_model
+        _get_model()
+        logger.info("Model warmup complete.")
+    except Exception as exc:
+        logger.warning(f"Model warmup failed: {exc}")
 
 
 # ── Global error handler: always return JSON, never plain text ────────────────
@@ -92,6 +104,11 @@ def search(
 ):
     """Fetch papers, enrich with AI summaries/claims, build and save the graph."""
 
+    cache_key = f"{topic.lower()}_{max_results}_{similarity_threshold}"
+    if cache_key in SEARCH_CACHE:
+        logger.info("Cache hit for: %s", cache_key)
+        return JSONResponse(content=SEARCH_CACHE[cache_key])
+
     logger.info("Search: topic='%s', max_results=%d, threshold=%.2f",
                 topic, max_results, similarity_threshold)
 
@@ -110,10 +127,10 @@ def search(
 
     # ── 2. Summarise + extract claims ─────────────────────────────────────────
     abstracts: list[str] = []
-    for idx, paper in enumerate(papers):
+    
+    def process_paper(idx, paper):
         abstract = paper.get("abstract", "")
-        logger.info("  [%d/%d] Summarising: %s…", idx + 1, len(papers),
-                    paper["title"][:60])
+        logger.info("  [%d/%d] Processing: %s…", idx + 1, len(papers), paper["title"][:60])
         try:
             paper["summary"] = summarize_text(abstract)
         except Exception as exc:
@@ -125,8 +142,15 @@ def search(
         except Exception as exc:
             logger.warning("  extract_claim failed for paper %d: %s", idx, exc)
             paper["claim"] = abstract[:200]
+        return abstract
 
-        abstracts.append(abstract)
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = []
+        for idx, paper in enumerate(papers):
+            futures.append(executor.submit(process_paper, idx, paper))
+        
+        for future in futures:
+            abstracts.append(future.result())
 
     # ── 3. Similarity matrix ──────────────────────────────────────────────────
     logger.info("Computing similarity matrix…")
@@ -148,10 +172,24 @@ def search(
         logger.warning("Contradiction detection failed: %s", exc)
         relationships = []
 
+    # ── 3.6 Automated Literature Review & Consensus Analyzer ──────────────────
+    logger.info("Generating literature review…")
+    try:
+        from backend.literature_review import cluster_related_papers, detect_consensus, detect_conflicts, generate_literature_review
+        clusters = cluster_related_papers(sim_matrix, distance_threshold=0.6)
+        consensus_data = detect_consensus(clusters, papers)
+        conflicts = detect_conflicts(clusters, relationships)
+        lit_review = generate_literature_review(topic, papers, consensus_data, conflicts)
+    except Exception as exc:
+        logger.warning("Literature review generation failed: %s", exc)
+        consensus_data = []
+        conflicts = []
+        lit_review = {}
+
     # ── 4. Build knowledge graph ──────────────────────────────────────────────
     logger.info("Building knowledge graph…")
     try:
-        G = build_graph(papers, sim_matrix, topic, similarity_threshold, relationships)
+        G = build_graph(papers, sim_matrix, topic, similarity_threshold, relationships, consensus_data)
     except Exception as exc:
         logger.error("build_graph failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Graph build failed: {exc}")
@@ -177,11 +215,12 @@ def search(
         timeline_path = ""
 
     # ── 7. Return ─────────────────────────────────────────────────────────────
-    return JSONResponse(content={
+    response_content = {
         "topic": topic,
         "paper_count": len(papers),
         "graph_path": graph_path,
         "timeline_path": timeline_path,
+        "literature_review": lit_review,
         "graph_stats": {
             "nodes": G.number_of_nodes(),
             "edges": G.number_of_edges(),
@@ -199,7 +238,10 @@ def search(
             }
             for p in papers
         ],
-    })
+    }
+    
+    SEARCH_CACHE[cache_key] = response_content
+    return JSONResponse(content=response_content)
 
 
 @app.get("/graph", response_class=HTMLResponse)
