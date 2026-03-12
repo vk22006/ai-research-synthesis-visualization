@@ -38,7 +38,8 @@ def build_graph(
     sim_matrix: np.ndarray,
     topic: str,
     similarity_threshold: float = SIMILARITY_THRESHOLD,
-    relationships: list[dict] = None
+    relationships: list[dict] = None,
+    consensus_data: list[dict] = None
 ) -> nx.Graph:
     """
     Build and return a NetworkX graph from enriched paper data.
@@ -170,6 +171,30 @@ def build_graph(
                     relation="mentions",
                     width=1,
                     color="#cccccc",
+                )
+
+    # ── Consensus nodes ───────────────────────────────────────────────────────
+    if consensus_data:
+        for cluster in consensus_data:
+            c_id = f"consensus::{cluster['cluster_id']}"
+            short_topic = cluster.get('topic', 'Theme')[:40]
+            G.add_node(
+                c_id,
+                node_type="consensus",
+                label=f"Consensus:\n{short_topic}",
+                title=f"<b>Consensus:</b> {cluster['statement']}",
+                color="#9B59B6",  # purple
+                size=22,
+                shape="box",
+            )
+            for pid in cluster["paper_ids"]:
+                G.add_edge(
+                    pid,
+                    c_id,
+                    relation="contributes_to",
+                    label="Contributes To",
+                    width=2,
+                    color="#D2B4DE",
                 )
 
     return G
