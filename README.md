@@ -1,8 +1,10 @@
 # AI Research Synthesis & Knowledge Graph Builder
 
+English | [தமிழ்](README_TA.md) | [中文](README_ZH.md) | [हिन्दी](README_HI.md) | [Bahasa Indonesia](README_ID.md)
+
 ![Main visualizations of the application](assets/app_visualization.gif)
 
-An end-to-end tool to accelerate AI research by automatically fetching papers, synthesizing their contents, and organizing them into interactive knowledge graphs. 
+An end-to-end tool to accelerate AI research by automatically fetching papers, synthesizing their contents, and organizing them into interactive knowledge graphs.
 
 This application uses Natural Language Processing (NLP) models to extract summaries and core claims from arXiv papers and visualizes the connections between research papers based on semantic similarity.
 
@@ -70,6 +72,7 @@ Run the FastAPI server using `uvicorn` (from the root directory):
 ```bash
 uvicorn app:app --reload --host 0.0.0.0 --port 8000
 ```
+
 The backend API will be available at `http://localhost:8000`. You can view the API documentation at `http://localhost:8000/docs`.
 
 #### 2. Start the Frontend (Streamlit)
@@ -79,6 +82,7 @@ In a new terminal window, run the Streamlit application:
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
+
 The frontend dashboard will automatically open in your default browser at `http://localhost:8501`.
 
 ## Usage
@@ -86,7 +90,7 @@ The frontend dashboard will automatically open in your default browser at `http:
 1. Open the Streamlit frontend.
 2. In the sidebar, enter a **Research Topic** (e.g., "Large Language Models", "Quantum Machine Learning", "Retrieval-Augmented Generation").
 3. Adjust the **Max Results** (how many papers to fetch) and the **Similarity Threshold** (minimum similarity score to form a connection in the graph).
-4. Click **Run Analysis**. 
+4. Click **Run Analysis**.
 5. The system will process the papers and display the Extracted Papers, their Summaries, extracted Claims, and an Interactive Knowledge Graph visualization.
 
 ## License
